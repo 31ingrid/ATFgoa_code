@@ -830,14 +830,14 @@ void model_parameters::compute_spr_rates(void)
 void model_parameters::evaluate_the_objective_function(void)
 {
   ofstream& evalout= *pad_evalout;
-  age_like=0.;
+  age_like=0.; //just having the . as part of the number identifies it as a floating point number (a double)
   sel_like=0.;
-  fpen=.0;
-  rec_like=.0;
+  fpen=0.;
+  rec_like=0.;
   rec_like2=0.;
-  surv_like=.0;
-  catch_like=.0;
-  f=.0;
+  surv_like=0.;
+  catch_like=0.;
+  f=0.;
   like_natm=0.;
   like_q=0.;
  if (active(rec_dev))
@@ -876,7 +876,7 @@ void model_parameters::evaluate_the_objective_function(void)
          }
        }
      age_like(2)-=offset(2);
-  //bracket for active(fish_slope_f)
+  //bracket for active(fish_slope_f) 
   //survey ages
          for(k=1;k<=2;k++)
          {
