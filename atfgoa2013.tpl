@@ -50,7 +50,7 @@ DATA_SECTION
   init_matrix wt(1,2,1,nages)   //(39)
   init_vector maturity(1,nages)   //(40)
   init_3darray lenage(1,2,1,nages,1,nlen_r-1)   //(41) 
-  init_number offset_const           //(42)
+  init_number offset_const           //(42)  a constant to offset zero values 
    int styr_rec; 
    vector cv_srv1(1,nobs_srv1);
  //year
@@ -745,9 +745,9 @@ FUNCTION evaluate_the_objective_function
   // Fit to indices (lognormal) 
   //weight each years estimate by 1/(2*variance) - use cv of biomass in sqrt(log(cv^2+1)) as sd of log(biomass) 
 
-   surv_like = norm2(elem_div(log(obs_srv1+.000001)-log(pred_srv1(yrs_srv1)+.000001),sqrt(2)*sqrt(log(elem_prod(cv_srv1,cv_srv1)+1.0))));
+   surv_like = norm2(elem_div(log(obs_srv1+offset_const)-log(pred_srv1(yrs_srv1)+offset_const),sqrt(2)*sqrt(log(elem_prod(cv_srv1,cv_srv1)+1.0))));
  //this subtracts the log(sd) from the likelihood - is a constant so I'm not adding it.
-    catch_like=norm2(log(catch_bio+.000001)-log(pred_catch+.000001));
+    catch_like=norm2(log(catch_bio+offset_const)-log(pred_catch+offset_const));
  //selectivity likelihood is penalty on how smooth selectivities are   
  //here are taking the sum of squares of the second differences
 
