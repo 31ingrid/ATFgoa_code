@@ -49,7 +49,8 @@ DATA_SECTION
  //need wt vector by length for split sex?
   init_matrix wt(1,2,1,nages)   //(39)
   init_vector maturity(1,nages)   //(40)
-  init_3darray lenage(1,2,1,nages,1,nlen_r-1)   //(41)
+  init_3darray lenage(1,2,1,nages,1,nlen_r-1)   //(41) 
+  init_number offset_const           //(42)
    int styr_rec; 
    vector cv_srv1(1,nobs_srv1);
  //year
@@ -147,7 +148,6 @@ PARAMETER_SECTION
   vector surv(1,2)
   vector offset(1,3)
   number rec_like
-  number rec_like2
   number catch_like
   vector age_like(1,3)
   vector sel_like(1,4)
@@ -191,6 +191,10 @@ PARAMETER_SECTION
   number like_natm
   number like_q
 
+
+!! cout<<"wt_like"<<endl;
+!! cout<< wt_like <<endl;
+
 PRELIMINARY_CALCS_SECTION
 
 //chop lower ages off and accumulate older ages 
@@ -233,8 +237,8 @@ PRELIMINARY_CALCS_SECTION
     {
        for (i=1; i <= nobs_fish; i++)
        {
-         //make observations proportions by year      
-         //fishery offset
+//make observations proportions by year      
+//fishery offset
            for (j=1; j<=nlen; j++)
            {
             obs_p_fish(k,i,j)=(obs_p_fish_r(k,i,j+1))/(sum(obs_p_fish_r(1,i)(2,nlen_r))+sum(obs_p_fish_r(2,i)(2,nlen_r)));
@@ -676,7 +680,6 @@ FUNCTION evaluate_the_objective_function
   sel_like=0.;
   fpen=0.;
   rec_like=0.;
-  rec_like2=0.;
   surv_like=0.;
   catch_like=0.;
   f=0.;
@@ -689,7 +692,6 @@ FUNCTION evaluate_the_objective_function
     //recruitment likelihood - norm2 is sum of square values   
     rec_like=norm2(rec_dev(styr_rec,endyr));
     f+=rec_like;
-    f+=rec_like2;
 
      for(k=1;k<=2;k++)
      {
@@ -699,7 +701,7 @@ FUNCTION evaluate_the_objective_function
           //fishery length likelihood 
            for (j=1; j<=nlen; j++)
            {
-             age_like(1)-=nsamples_fish(k,i)*(1e-5+obs_p_fish(k,i,j))*log(pred_p_fish(k,ii,j)+1e-5);
+             age_like(1)-=nsamples_fish(k,i)*(offset_const+obs_p_fish(k,i,j))*log(pred_p_fish(k,ii,j)+offset_const);
             }
          }
       }
@@ -714,7 +716,7 @@ FUNCTION evaluate_the_objective_function
             //survey likelihood 
              for (j=1; j<=nlen; j++)
              {
-               age_like(2)-=nsamples_srv1_length(k,i)*(1e-3+obs_p_srv1_length(k,i,j))*log(pred_p_srv1_len(k,ii,j)+1e-3);
+               age_like(2)-=nsamples_srv1_length(k,i)*(offset_const+obs_p_srv1_length(k,i,j))*log(pred_p_srv1_len(k,ii,j)+offset_const);
              }
          }
        }
@@ -729,7 +731,7 @@ FUNCTION evaluate_the_objective_function
               //survey likelihood 
               for (j=1; j<=nages; j++)
               {
-                age_like(3)-=nsamples_srv1_age(k,i)*(1e-3+obs_p_srv1_age(k,i,j))*log(pred_p_srv1_age(k,ii,j)+1e-3);
+                age_like(3)-=nsamples_srv1_age(k,i)*(offset_const+obs_p_srv1_age(k,i,j))*log(pred_p_srv1_age(k,ii,j)+offset_const);
               }
             }
          } 
@@ -747,7 +749,9 @@ FUNCTION evaluate_the_objective_function
  //this subtracts the log(sd) from the likelihood - is a constant so I'm not adding it.
     catch_like=norm2(log(catch_bio+.000001)-log(pred_catch+.000001));
  //selectivity likelihood is penalty on how smooth selectivities are   
- //here are taking the sum of squares of the second differences 
+ //here are taking the sum of squares of the second differences
+
+ 
   if(active(log_selcoffs_fish))
   {  
     sel_like(1)=wt_like(1)*norm2(first_difference(first_difference(log_sel_fish(1))));
