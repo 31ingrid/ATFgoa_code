@@ -11,9 +11,6 @@
  218000000.
 #(7) nages for number of ages in the model (age 3 to 15+)
  13  
-#(8) constrain recruits to be near average recruitments from 1982 to (endyr-this number)
-#for this many of the last years
-3
 #(9) Nages to read for observed age comps          
  21
 #(10)fishery nselages- selectivity after nselages age set equal to selectivity at nselages age 
