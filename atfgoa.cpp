@@ -22,9 +22,9 @@ model_data::model_data(int argc,char * argv[]) : ad_comm(argc,argv)
   endyr_fut.allocate("endyr_fut");
   phase_F40.allocate("phase_F40");
   median_rec.allocate("median_rec");
+  nages.allocate("nages");
   median_rec_yrs.allocate("median_rec_yrs");
   nages_read.allocate("nages_read");
-  nages.allocate("nages");
   nselages.allocate("nselages");
   nselages_srv1.allocate("nselages_srv1");
   monot_sel.allocate("monot_sel");

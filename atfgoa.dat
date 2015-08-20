@@ -9,13 +9,13 @@
 #(6) median recruits (1981 to 1999) to use for last years in model(this is half of total recruits(male+female))
 #this makes it consistent with the projection model recruitment used
  218000000.
-#(7) constrain recruits to be near average recruitments from 1982 to (endyr-this number)
+#(7) nages for number of ages in the model (age 3 to 15+)
+ 13  
+#(8) constrain recruits to be near average recruitments from 1982 to (endyr-this number)
 #for this many of the last years
 3
-#(8) Nages to read for observed age comps          
+#(9) Nages to read for observed age comps          
  21
-#(9) nages for number of ages in the model (age 3 to 15+)
- 13            
 #(10)fishery nselages- selectivity after nselages age set equal to selectivity at nselages age 
  9
 #(11)survey nselages_srv1- selectivity after nselages age set equal to selectivity at nselages age

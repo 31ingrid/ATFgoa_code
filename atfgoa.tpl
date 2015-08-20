@@ -9,10 +9,11 @@ DATA_SECTION
   init_int endyr_fut //(4) end year of projections
 //read only female M when doing profile like on male M
   init_int phase_F40 //(5)
-  init_number median_rec  //(6)
-  init_int median_rec_yrs //(7)
-  init_int nages_read //(8)
-  init_int nages     //(9)
+  init_number median_rec  //(6) 
+  init_int nages     //(7)  
+  init_int median_rec_yrs //(8)
+  init_int nages_read //(9)
+   
  //selectivity is set to the selectivity at nselages-1 after age nselages 
   init_int nselages  //(10)
   init_int nselages_srv1 //(11)
