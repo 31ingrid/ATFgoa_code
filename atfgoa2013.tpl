@@ -8,49 +8,48 @@ DATA_SECTION
   init_int styr_fut	//(3) start year of projections (endyr+1)  
   init_int endyr_fut //(4) end year of projections
 //read only female M when doing profile like on male M
-  init_vector M(1,2) //(5)
-  init_int phase_F40 //(6)
-  init_number median_rec  //(7)
-  init_int median_rec_yrs //(8)
-  init_int nages_read //(9)
-  init_int nages     //(10)
+  init_int phase_F40 //(5)
+  init_number median_rec  //(6)
+  init_int median_rec_yrs //(7)
+  init_int nages_read //(8)
+  init_int nages     //(9)
  //selectivity is set to the selectivity at nselages-1 after age nselages 
-  init_int nselages  //(11)
-  init_int nselages_srv1 //(12)
-  init_int monot_sel     //(13)
-  init_int monot_sel_srv1 //(14)
-  init_int phase_logistic_sel   //(15)
-  init_int phase_selcoffs   //(16)
-  init_int phase_logistic_sel_srv1  //(17)
-  init_int phase_selcoffs_srv1   //(18)
-  init_vector wt_like(1,8)    //(19)
+  init_int nselages  //(10)
+  init_int nselages_srv1 //(11)
+  init_int monot_sel     //(12)
+  init_int monot_sel_srv1 //(13)
+  init_int phase_logistic_sel   //(14)
+  init_int phase_selcoffs   //(15)
+  init_int phase_logistic_sel_srv1  //(16)
+  init_int phase_selcoffs_srv1   //(17)
+  init_vector wt_like(1,8)    //(18)
  //sample size for length comps for weighting likelihoods  
-  init_int nlen_r    //(20)
+  init_int nlen_r    //(19)
 //reduce nlen by one to cut off 1st length bin 
-  init_int nobs_fish //(21)
+  init_int nobs_fish //(20)
   //!!cout<<nobs_fish<<endl;
-  init_ivector yrs_fish(1,nobs_fish) //(22)
-  init_matrix nsamples_fish(1,2,1,nobs_fish) //(23)
-  init_int nobs_srv1  //(24)
-  init_ivector yrs_srv1(1,nobs_srv1)  //(25)
-  init_int nobs_srv1_length  //(26)
-  init_ivector yrs_srv1_length(1,nobs_srv1_length)    //(27)
-  init_matrix nsamples_srv1_length(1,2,1,nobs_srv1_length)  //(28)
-  init_int nobs_srv1_age  //(29)
-  init_ivector yrs_srv1_age(1,nobs_srv1_age)  //(30)
-  init_vector like_wght(1,5)    //(31)
-  init_matrix nsamples_srv1_age(1,2,1,nobs_srv1_age) //(32)
-  init_3darray obs_p_srv1_len_r(1,2,1,nobs_srv1_length,1,nlen_r) //(33) 2x2x21
-  init_3darray obs_p_srv1_age_read(1,2,1,nobs_srv1_age,1,nages_read)  //(34)  2x11x21  
-  init_3darray obs_p_fish_r(1,2,1,nobs_fish,1,nlen_r)  //(35) 2x31x21
-  init_vector catch_bio(styr,endyr)  //(36)
-  init_vector obs_srv1(1,nobs_srv1) //(37)
-  init_vector obs_srv1_sd(1,nobs_srv1) //(38)
+  init_ivector yrs_fish(1,nobs_fish) //(21)
+  init_matrix nsamples_fish(1,2,1,nobs_fish) //(22)
+  init_int nobs_srv1  //(23)
+  init_ivector yrs_srv1(1,nobs_srv1)  //(24)
+  init_int nobs_srv1_length  //(25)
+  init_ivector yrs_srv1_length(1,nobs_srv1_length)    //(26)
+  init_matrix nsamples_srv1_length(1,2,1,nobs_srv1_length)  //(27)
+  init_int nobs_srv1_age  //(28)
+  init_ivector yrs_srv1_age(1,nobs_srv1_age)  //(29)
+  init_vector like_wght(1,5)    //(30)
+  init_matrix nsamples_srv1_age(1,2,1,nobs_srv1_age) //(31)
+  init_3darray obs_p_srv1_len_r(1,2,1,nobs_srv1_length,1,nlen_r) //(32) 2x2x21
+  init_3darray obs_p_srv1_age_read(1,2,1,nobs_srv1_age,1,nages_read)  //(33)  2x11x21  
+  init_3darray obs_p_fish_r(1,2,1,nobs_fish,1,nlen_r)  //(34) 2x31x21
+  init_vector catch_bio(styr,endyr)  //(35)
+  init_vector obs_srv1(1,nobs_srv1) //(36)
+  init_vector obs_srv1_sd(1,nobs_srv1) //(37)
  //need wt vector by length for split sex?
-  init_matrix wt(1,2,1,nages)   //(39)
-  init_vector maturity(1,nages)   //(40)
-  init_3darray lenage(1,2,1,nages,1,nlen_r-1)   //(41) 
-  init_number offset_const           //(42)  a constant to offset zero values 
+  init_matrix wt(1,2,1,nages)   //(38)
+  init_vector maturity(1,nages)   //(39)
+  init_3darray lenage(1,2,1,nages,1,nlen_r-1)   //(40) 
+  init_number offset_const           //(41)  a constant to offset zero values 
    int styr_rec; 
    vector cv_srv1(1,nobs_srv1);
  //year

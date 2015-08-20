@@ -570,17 +570,17 @@ pred_sexr survey: seq(1961,2013)
 likelihood : 'rec_like',  'len_like_fishery', 'len_like_surv', 'age_like_surv', 'fpen',  'catch_like',  'surv_like',' sel_like_fish',' sel_like_survey','total likelihood'
 0   0 0 0 83.813 0.0492191 158.088 0 0 244.362
 projected biomass: seq(2014,2018)
- 6.9514e-310 0 0 0 0
- 6.9514e-310 0 0 0 0
- 6.9514e-310 0 0 0 0
- 6.9514e-310 0 0 0 0
- 6.9514e-310 0 0 0 0
+ 6.93403e-310 0 0 0 0
+ 6.93403e-310 0 0 0 0
+ 6.93403e-310 0 0 0 0
+ 6.93403e-310 0 0 0 0
+ 6.93403e-310 0 0 0 0
 projected female spawning biomass: seq(2014,2018)
- 6.9514e-310 0 0 0 0
- 6.9514e-310 0 0 0 0
- 6.9514e-310 0 0 0 0
- 6.9514e-310 0 0 0 0
- 6.9514e-310 0 0 0 0
+ 6.93403e-310 0 0 0 0
+ 6.93403e-310 0 0 0 0
+ 6.93403e-310 0 0 0 0
+ 6.93403e-310 0 0 0 0
+ 6.93403e-310 0 0 0 0
 Future Yield F40 F35 : seq(2014,2018)
  0 0 0 0 0
  0 0 0 0 0

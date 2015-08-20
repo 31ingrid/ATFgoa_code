@@ -20,7 +20,6 @@ model_data::model_data(int argc,char * argv[]) : ad_comm(argc,argv)
   endyr.allocate("endyr");
   styr_fut.allocate("styr_fut");
   endyr_fut.allocate("endyr_fut");
-  M.allocate(1,2,"M");
   phase_F40.allocate("phase_F40");
   median_rec.allocate("median_rec");
   median_rec_yrs.allocate("median_rec_yrs");
