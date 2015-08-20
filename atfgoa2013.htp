@@ -44,6 +44,7 @@ class model_data : public ad_comm{
   data_matrix wt;
   data_vector maturity;
   data_3array lenage;
+  data_number offset_const;
   int styr_rec;
   dvector cv_srv1;
   int i;
@@ -123,6 +124,7 @@ private:
   param_vector avgsel_srv1;
   param_matrix popn;
   param_matrix totn_srv1;
+  param_vector M;
   param_vector explbiom;
   param_vector pred_bio;
   param_vector fspbio;
@@ -142,7 +144,6 @@ private:
   param_vector surv;
   param_vector offset;
   param_number rec_like;
-  param_number rec_like2;
   param_number catch_like;
   param_vector age_like;
   param_vector sel_like;

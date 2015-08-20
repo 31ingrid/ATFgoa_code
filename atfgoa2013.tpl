@@ -129,6 +129,7 @@ PARAMETER_SECTION
   vector avgsel_srv1(1,2)
   matrix popn(1,2,styr,endyr)
   matrix totn_srv1(1,2,styr,endyr)
+  vector M(1,2)
   vector explbiom(styr,endyr)
   vector pred_bio(styr,endyr)
   vector fspbio(styr,endyr)
@@ -280,6 +281,9 @@ PRELIMINARY_CALCS_SECTION
          }
        }
     }
+
+  M(1)=0.20;
+  M(2)=0.35;
 
 PROCEDURE_SECTION
    get_selectivity();

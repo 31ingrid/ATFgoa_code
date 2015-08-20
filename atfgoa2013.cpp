@@ -52,12 +52,12 @@ model_data::model_data(int argc,char * argv[]) : ad_comm(argc,argv)
   obs_p_srv1_age_read.allocate(1,2,1,nobs_srv1_age,1,nages_read,"obs_p_srv1_age_read");
   obs_p_fish_r.allocate(1,2,1,nobs_fish,1,nlen_r,"obs_p_fish_r");
   catch_bio.allocate(styr,endyr,"catch_bio");
-cout<<catch_bio<<endl;
   obs_srv1.allocate(1,nobs_srv1,"obs_srv1");
   obs_srv1_sd.allocate(1,nobs_srv1,"obs_srv1_sd");
   wt.allocate(1,2,1,nages,"wt");
   maturity.allocate(1,nages,"maturity");
   lenage.allocate(1,2,1,nages,1,nlen_r-1,"lenage");
+  offset_const.allocate("offset_const");
   cv_srv1.allocate(1,nobs_srv1);
   nlen=nlen_r-1;
   styr_rec=styr-nages+1;
@@ -137,6 +137,10 @@ model_parameters::model_parameters(int sz,int argc,char * argv[]) :
   #ifndef NO_AD_INITIALIZE
     totn_srv1.initialize();
   #endif
+  M.allocate(1,2,"M");
+  #ifndef NO_AD_INITIALIZE
+    M.initialize();
+  #endif
   explbiom.allocate(styr,endyr,"explbiom");
   #ifndef NO_AD_INITIALIZE
     explbiom.initialize();
@@ -212,10 +216,6 @@ model_parameters::model_parameters(int sz,int argc,char * argv[]) :
   rec_like.allocate("rec_like");
   #ifndef NO_AD_INITIALIZE
   rec_like.initialize();
-  #endif
-  rec_like2.allocate("rec_like2");
-  #ifndef NO_AD_INITIALIZE
-  rec_like2.initialize();
   #endif
   catch_like.allocate("catch_like");
   #ifndef NO_AD_INITIALIZE
@@ -353,13 +353,14 @@ model_parameters::model_parameters(int sz,int argc,char * argv[]) :
   #ifndef NO_AD_INITIALIZE
   like_q.initialize();
   #endif
+ cout<<"wt_like"<<endl;
+ cout<< wt_like <<endl;
 }
 
 void model_parameters::preliminary_calculations(void)
 {
 
   admaster_slave_variable_interface(*this);
- //cout<<"to prelim calcs"<<endl;
  //sex loop
     for(k=1; k<=2; k++)  
     { 
@@ -388,18 +389,11 @@ void model_parameters::preliminary_calculations(void)
       {
        obs_sexr_srv1_l(i)=(sum(obs_p_srv1_len_r(1,i)(2,nlen+1)))/(sum(obs_p_srv1_len_r(1,i)(2,nlen+1))+sum(obs_p_srv1_len_r(2,i)(2,nlen+1)));
       }
- // cout<< " thru sex ratio "<<endl;
- //Compute offset for multinomial
- // offset is a constant nplog(p) is added to the likelihood     
- // magnitude depends on nsamples(sample size) and p's_
-  //k is sex loop
  offset=0.; 
    for(k=1; k<=2; k++)
     {
        for (i=1; i <= nobs_fish; i++)
        {
-         //make observations proportions by year      
-         //fishery offset
            for (j=1; j<=nlen; j++)
            {
             obs_p_fish(k,i,j)=(obs_p_fish_r(k,i,j+1))/(sum(obs_p_fish_r(1,i)(2,nlen_r))+sum(obs_p_fish_r(2,i)(2,nlen_r)));
@@ -415,7 +409,6 @@ void model_parameters::preliminary_calculations(void)
  {  
      for (i=1; i <= nobs_srv1_length; i++)
      {
-     //   cout<< " to obs_p_srv1_length "<<endl;
           for (j=1; j<=nlen; j++)
           {
             obs_p_srv1_length(k,i,j)=obs_p_srv1_len_r(k,i,j+1)/sum(obs_p_srv1_len_r(1,i)(2,nlen_r)+obs_p_srv1_len_r(2,i)(2,nlen_r));
@@ -432,7 +425,6 @@ void model_parameters::preliminary_calculations(void)
        for (i=1; i <= nobs_srv1_age; i++)
        {
          obs_p_srv1_age(k,i)=obs_p_srv1_age_r(k,i)/(sum(obs_p_srv1_age_r(1,i))+sum(obs_p_srv1_age_r(2,i)));
-         //cout<<obs_p_srv1(i)<<endl;
          for (j=1; j<=nages; j++)
          {
             if (obs_p_srv1_age(k,i,j)>0.0)
@@ -442,7 +434,8 @@ void model_parameters::preliminary_calculations(void)
          }
        }
     }
-  //cout<<endl<<"to end of offset"<<endl;
+  M(1)=0.20;
+  M(2)=0.35;
 }
 
 void model_parameters::userfunction(void)
@@ -834,7 +827,6 @@ void model_parameters::evaluate_the_objective_function(void)
   sel_like=0.;
   fpen=0.;
   rec_like=0.;
-  rec_like2=0.;
   surv_like=0.;
   catch_like=0.;
   f=0.;
@@ -847,7 +839,6 @@ void model_parameters::evaluate_the_objective_function(void)
     //recruitment likelihood - norm2 is sum of square values   
     rec_like=norm2(rec_dev(styr_rec,endyr));
     f+=rec_like;
-    f+=rec_like2;
      for(k=1;k<=2;k++)
      {
         for (i=1; i <= nobs_fish; i++)
@@ -856,7 +847,7 @@ void model_parameters::evaluate_the_objective_function(void)
           //fishery length likelihood 
            for (j=1; j<=nlen; j++)
            {
-             age_like(1)-=nsamples_fish(k,i)*(1e-5+obs_p_fish(k,i,j))*log(pred_p_fish(k,ii,j)+1e-5);
+             age_like(1)-=nsamples_fish(k,i)*(offset_const+obs_p_fish(k,i,j))*log(pred_p_fish(k,ii,j)+offset_const);
             }
          }
       }
@@ -871,7 +862,7 @@ void model_parameters::evaluate_the_objective_function(void)
             //survey likelihood 
              for (j=1; j<=nlen; j++)
              {
-               age_like(2)-=nsamples_srv1_length(k,i)*(1e-3+obs_p_srv1_length(k,i,j))*log(pred_p_srv1_len(k,ii,j)+1e-3);
+               age_like(2)-=nsamples_srv1_length(k,i)*(offset_const+obs_p_srv1_length(k,i,j))*log(pred_p_srv1_len(k,ii,j)+offset_const);
              }
          }
        }
@@ -886,7 +877,7 @@ void model_parameters::evaluate_the_objective_function(void)
               //survey likelihood 
               for (j=1; j<=nages; j++)
               {
-                age_like(3)-=nsamples_srv1_age(k,i)*(1e-3+obs_p_srv1_age(k,i,j))*log(pred_p_srv1_age(k,ii,j)+1e-3);
+                age_like(3)-=nsamples_srv1_age(k,i)*(offset_const+obs_p_srv1_age(k,i,j))*log(pred_p_srv1_age(k,ii,j)+offset_const);
               }
             }
          } 
@@ -898,11 +889,11 @@ void model_parameters::evaluate_the_objective_function(void)
     }
   // Fit to indices (lognormal) 
   //weight each years estimate by 1/(2*variance) - use cv of biomass in sqrt(log(cv^2+1)) as sd of log(biomass) 
-   surv_like = norm2(elem_div(log(obs_srv1+.000001)-log(pred_srv1(yrs_srv1)+.000001),sqrt(2)*sqrt(log(elem_prod(cv_srv1,cv_srv1)+1.0))));
+   surv_like = norm2(elem_div(log(obs_srv1+offset_const)-log(pred_srv1(yrs_srv1)+offset_const),sqrt(2)*sqrt(log(elem_prod(cv_srv1,cv_srv1)+1.0))));
  //this subtracts the log(sd) from the likelihood - is a constant so I'm not adding it.
-    catch_like=norm2(log(catch_bio+.000001)-log(pred_catch+.000001));
+    catch_like=norm2(log(catch_bio+offset_const)-log(pred_catch+offset_const));
  //selectivity likelihood is penalty on how smooth selectivities are   
- //here are taking the sum of squares of the second differences 
+ //here are taking the sum of squares of the second differences
   if(active(log_selcoffs_fish))
   {  
     sel_like(1)=wt_like(1)*norm2(first_difference(first_difference(log_sel_fish(1))));
