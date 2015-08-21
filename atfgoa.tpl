@@ -10,46 +10,46 @@ DATA_SECTION
 //read only female M when doing profile like on male M
   init_int phase_F40 //(5)
   init_number median_rec  //(6) 
-  init_int nages     //(7) number of ages in the model 
-  init_int nages_read //(9)
+  init_int nages     //(7) number of ages in the model (n=13, from 3 to 15+) 
+  init_int nages_read //(8) (n=21)
    
  //selectivity is set to the selectivity at nselages-1 after age nselages 
-  init_int nselages  //(10)
-  init_int nselages_srv1 //(11)
-  init_int monot_sel     //(12)
-  init_int monot_sel_srv1 //(13)
-  init_int phase_logistic_sel   //(14)
-  init_int phase_selcoffs   //(15)
-  init_int phase_logistic_sel_srv1  //(16)
-  init_int phase_selcoffs_srv1   //(17)
-  init_vector wt_like(1,8)    //(18)
+  init_int nselages  //(9)
+  init_int nselages_srv1 //(10)
+  init_int monot_sel     //(11)
+  init_int monot_sel_srv1 //(12)
+  init_int phase_logistic_sel   //(13)
+  init_int phase_selcoffs   //(14)
+  init_int phase_logistic_sel_srv1  //(15)
+  init_int phase_selcoffs_srv1   //(16)
+  init_vector wt_like(1,8)    //(17)
  //sample size for length comps for weighting likelihoods  
-  init_int nlen_r    //(19)
+  init_int nlen_r    //(18)    number of length bins
 //reduce nlen by one to cut off 1st length bin 
-  init_int nobs_fish //(20)
+  init_int nobs_fish //(19)
   //!!cout<<nobs_fish<<endl;
-  init_ivector yrs_fish(1,nobs_fish) //(21)
-  init_matrix nsamples_fish(1,2,1,nobs_fish) //(22)
-  init_int nobs_srv1  //(23)
-  init_ivector yrs_srv1(1,nobs_srv1)  //(24)
-  init_int nobs_srv1_length  //(25)
-  init_ivector yrs_srv1_length(1,nobs_srv1_length)    //(26)
-  init_matrix nsamples_srv1_length(1,2,1,nobs_srv1_length)  //(27)
-  init_int nobs_srv1_age  //(28)
-  init_ivector yrs_srv1_age(1,nobs_srv1_age)  //(29)
-  init_vector like_wght(1,5)    //(30)
-  init_matrix nsamples_srv1_age(1,2,1,nobs_srv1_age) //(31)
-  init_3darray obs_p_srv1_len_r(1,2,1,nobs_srv1_length,1,nlen_r) //(32) 2x2x21
-  init_3darray obs_p_srv1_age_read(1,2,1,nobs_srv1_age,1,nages_read)  //(33)  2x11x21  
-  init_3darray obs_p_fish_r(1,2,1,nobs_fish,1,nlen_r)  //(34) 2x31x21
-  init_vector catch_bio(styr,endyr)  //(35)
-  init_vector obs_srv1(1,nobs_srv1) //(36)
-  init_vector obs_srv1_sd(1,nobs_srv1) //(37)
+  init_ivector yrs_fish(1,nobs_fish) //(20)
+  init_matrix nsamples_fish(1,2,1,nobs_fish) //(21)
+  init_int nobs_srv1  //(22)
+  init_ivector yrs_srv1(1,nobs_srv1)  //(23)
+  init_int nobs_srv1_length  //(24)
+  init_ivector yrs_srv1_length(1,nobs_srv1_length)    //(25)
+  init_matrix nsamples_srv1_length(1,2,1,nobs_srv1_length)  //(26)
+  init_int nobs_srv1_age  //(27)
+  init_ivector yrs_srv1_age(1,nobs_srv1_age)  //(28)
+  init_vector like_wght(1,5)    //(29)
+  init_matrix nsamples_srv1_age(1,2,1,nobs_srv1_age) //(30)
+  init_3darray obs_p_srv1_len_r(1,2,1,nobs_srv1_length,1,nlen_r) //(31) 2x2x21
+  init_3darray obs_p_srv1_age_read(1,2,1,nobs_srv1_age,1,nages_read)  //(32)  2x11x21  
+  init_3darray obs_p_fish_r(1,2,1,nobs_fish,1,nlen_r)  //(33) 2x31x21
+  init_vector catch_bio(styr,endyr)  //(34)
+  init_vector obs_srv1(1,nobs_srv1) //(35)
+  init_vector obs_srv1_sd(1,nobs_srv1) //(36)
  //need wt vector by length for split sex?
-  init_matrix wt(1,2,1,nages)   //(38)
-  init_vector maturity(1,nages)   //(39)
-  init_3darray lenage(1,2,1,nages,1,nlen_r-1)   //(40) 
-  init_number offset_const           //(41)  a constant to offset zero values 
+  init_matrix wt(1,2,1,nages)   //(37)
+  init_vector maturity(1,nages)   //(38)
+  init_3darray lenage(1,2,1,nages,1,nlen_r-1)   //(39) 
+  init_number offset_const           //(40)  a constant to offset zero values 
    int styr_rec; 
    vector cv_srv1(1,nobs_srv1);
  //year
@@ -938,7 +938,7 @@ REPORT_SECTION
        {
           report << 2*mfexp(mean_log_rec+rec_dev(i))<<" ";
        }
-   //   for(i=1;i<=median_rec_yrs;i++)report<<2*median_rec<<" ";
+
   report <<endl<< "selectivity fishery females: seq(3,15)" << endl;
   report << sel(1)/maxsel_fish << endl;
   report << "selectivity fishery males: seq(3,15)" << endl;
@@ -1111,7 +1111,7 @@ REPORT_SECTION
        {
           R_out << 2*mfexp(mean_log_rec+rec_dev(i))<<" ";
        }
-   //   for(i=1;i<=median_rec_yrs;i++)R_out<<2*median_rec<<" ";
+
   R_out <<endl<< "$selectivity.fishery.females" << endl;
   R_out << sel(1)/maxsel_fish << endl;
   R_out << "$selectivity.fishery.males" << endl;

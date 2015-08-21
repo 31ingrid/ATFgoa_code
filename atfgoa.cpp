@@ -1074,7 +1074,6 @@ void model_parameters::report()
        {
           report << 2*mfexp(mean_log_rec+rec_dev(i))<<" ";
        }
-   //   for(i=1;i<=median_rec_yrs;i++)report<<2*median_rec<<" ";
   report <<endl<< "selectivity fishery females: seq(3,15)" << endl;
   report << sel(1)/maxsel_fish << endl;
   report << "selectivity fishery males: seq(3,15)" << endl;
@@ -1242,7 +1241,6 @@ void model_parameters::report()
        {
           R_out << 2*mfexp(mean_log_rec+rec_dev(i))<<" ";
        }
-   //   for(i=1;i<=median_rec_yrs;i++)R_out<<2*median_rec<<" ";
   R_out <<endl<< "$selectivity.fishery.females" << endl;
   R_out << sel(1)/maxsel_fish << endl;
   R_out << "$selectivity.fishery.males" << endl;
