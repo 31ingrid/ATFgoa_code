@@ -268,7 +268,8 @@ PRELIMINARY_CALCS_SECTION
       for(i=1; i<=nobs_fish;i++)
         {
          obs_sexr(i)=(sum(obs_p_fish_r(1,i)(2,nlen+1)))/(sum(obs_p_fish_r(1,i)(2,nlen+1))+sum(obs_p_fish_r(2,i)(2,nlen+1)));
-        }
+        }   
+   cout<<"obs_sexr"<<obs_sexr<<std::endl;
 //age obs sex ratio in survey
       for(i=1; i<=nobs_srv1_age;i++)
       {

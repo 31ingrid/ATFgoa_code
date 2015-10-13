@@ -7,6 +7,7 @@
   long hour,minute,second;
   double elapsed_time;
 #include <admodel.h>
+#include <contrib.h>
 
   extern "C"  {
     void ad_boundf(int i);
@@ -23,7 +24,6 @@ model_data::model_data(int argc,char * argv[]) : ad_comm(argc,argv)
   phase_F40.allocate("phase_F40");
   median_rec.allocate("median_rec");
   nages.allocate("nages");
-  nages_read.allocate("nages_read");
   nselages.allocate("nselages");
   nselages_srv1.allocate("nselages_srv1");
   monot_sel.allocate("monot_sel");
@@ -33,7 +33,7 @@ model_data::model_data(int argc,char * argv[]) : ad_comm(argc,argv)
   phase_logistic_sel_srv1.allocate("phase_logistic_sel_srv1");
   phase_selcoffs_srv1.allocate("phase_selcoffs_srv1");
   wt_like.allocate(1,8,"wt_like");
-  nlen_r.allocate("nlen_r");
+  nlen.allocate("nlen");
   nobs_fish.allocate("nobs_fish");
   yrs_fish.allocate(1,nobs_fish,"yrs_fish");
   nsamples_fish.allocate(1,2,1,nobs_fish,"nsamples_fish");
@@ -46,27 +46,25 @@ model_data::model_data(int argc,char * argv[]) : ad_comm(argc,argv)
   yrs_srv1_age.allocate(1,nobs_srv1_age,"yrs_srv1_age");
   like_wght.allocate(1,5,"like_wght");
   nsamples_srv1_age.allocate(1,2,1,nobs_srv1_age,"nsamples_srv1_age");
-  obs_p_srv1_len_r.allocate(1,2,1,nobs_srv1_length,1,nlen_r,"obs_p_srv1_len_r");
-  obs_p_srv1_age_read.allocate(1,2,1,nobs_srv1_age,1,nages_read,"obs_p_srv1_age_read");
-  obs_p_fish_r.allocate(1,2,1,nobs_fish,1,nlen_r,"obs_p_fish_r");
+  obs_p_srv1_length.allocate(1,2,1,nobs_srv1_length,1,nlen,"obs_p_srv1_length");
+  obs_p_srv1_age.allocate(1,2,1,nobs_srv1_age,1,nages,"obs_p_srv1_age");
+  obs_p_fish.allocate(1,2,1,nobs_fish,1,nlen,"obs_p_fish");
   catch_bio.allocate(styr,endyr,"catch_bio");
   obs_srv1.allocate(1,nobs_srv1,"obs_srv1");
   obs_srv1_sd.allocate(1,nobs_srv1,"obs_srv1_sd");
   wt.allocate(1,2,1,nages,"wt");
   maturity.allocate(1,nages,"maturity");
-  lenage.allocate(1,2,1,nages,1,nlen_r-1,"lenage");
+  lenage.allocate(1,2,1,nages,1,nlen,"lenage");
   offset_const.allocate("offset_const");
   cv_srv1.allocate(1,nobs_srv1);
-  nlen=nlen_r-1;
   styr_rec=styr-nages+1;
   if(nselages>nages) nselages=nages;
   if(nselages_srv1>nages) nselages_srv1=nages;
   cv_srv1=elem_div(obs_srv1_sd,obs_srv1);
   wt=wt*.001;
-  obs_p_srv1_age.allocate(1,2,1,nobs_srv1_age,1,nages);
-  obs_p_srv1_age_r.allocate(1,2,1,nobs_srv1_age,1,nages);
-  obs_p_srv1_length.allocate(1,2,1,nobs_srv1_length,1,nlen);
-  obs_p_fish.allocate(1,2,1,nobs_fish,1,nlen);
+  test.allocate(1,2,1,3,1,4,1,5);
+ cout <<"test"<<endl; 
+ cout <<test<<endl;  
   obs_sexr.allocate(1,nobs_fish);
   obs_sexr_srv1.allocate(1,nobs_srv1_age);
   obs_sexr_srv1_l.allocate(1,nobs_srv1_length);
@@ -84,6 +82,7 @@ model_parameters::model_parameters(int sz,int argc,char * argv[]) :
  model_data(argc,argv) , function_minimizer(sz)
 {
   initializationfunction();
+ cout <<"line 89"<<endl;
   q1.allocate(0.01,20.0,-8,"q1");
   mean_log_rec.allocate(1,"mean_log_rec");
   rec_dev.allocate(styr_rec,endyr,-15,15,2,"rec_dev");
@@ -101,6 +100,7 @@ model_parameters::model_parameters(int sz,int argc,char * argv[]) :
   srv1_sel50_m.allocate(1.,10.,phase_logistic_sel_srv1,"srv1_sel50_m");
   sexr_param_fish.allocate(1.0,1.0,-5,"sexr_param_fish");
   sexr_param_srv.allocate(.25,1.0,phase_selcoffs_srv1,"sexr_param_srv");
+ cout <<"line 114"<<endl;  
   F40.allocate(0.05,.5,phase_F40,"F40");
   F35.allocate(0.05,.5,phase_F40,"F35");
   log_sel_fish.allocate(1,2,1,nages,"log_sel_fish");
@@ -139,6 +139,7 @@ model_parameters::model_parameters(int sz,int argc,char * argv[]) :
   #ifndef NO_AD_INITIALIZE
     M.initialize();
   #endif
+ cout <<"line 128"<<endl; 
   explbiom.allocate(styr,endyr,"explbiom");
   #ifndef NO_AD_INITIALIZE
     explbiom.initialize();
@@ -155,6 +156,7 @@ model_parameters::model_parameters(int sz,int argc,char * argv[]) :
   #ifndef NO_AD_INITIALIZE
     pred_srv1.initialize();
   #endif
+ cout <<"line 133"<<endl;
   pred_p_fish.allocate(1,2,styr,endyr,1,nlen,"pred_p_fish");
   #ifndef NO_AD_INITIALIZE
     pred_p_fish.initialize();
@@ -171,6 +173,7 @@ model_parameters::model_parameters(int sz,int argc,char * argv[]) :
   #ifndef NO_AD_INITIALIZE
     pred_catch.initialize();
   #endif
+ cout <<"line 138"<<endl; 
   natage.allocate(1,2,styr,endyr,1,nages,"natage");
   #ifndef NO_AD_INITIALIZE
     natage.initialize();
@@ -179,10 +182,12 @@ model_parameters::model_parameters(int sz,int argc,char * argv[]) :
   #ifndef NO_AD_INITIALIZE
     catage.initialize();
   #endif
+ cout <<"line 141"<<endl;   
   natlength.allocate(1,2,styr,endyr,1,nlen,"natlength");
   #ifndef NO_AD_INITIALIZE
     natlength.initialize();
   #endif
+ cout <<"line 142"<<endl;  
   Z.allocate(1,2,styr,endyr,1,nages,"Z");
   #ifndef NO_AD_INITIALIZE
     Z.initialize();
@@ -199,6 +204,7 @@ model_parameters::model_parameters(int sz,int argc,char * argv[]) :
   #ifndef NO_AD_INITIALIZE
     fmort.initialize();
   #endif
+ cout <<"line 144"<<endl; 
   rbar.allocate("rbar");
   #ifndef NO_AD_INITIALIZE
   rbar.initialize();
@@ -241,6 +247,8 @@ model_parameters::model_parameters(int sz,int argc,char * argv[]) :
   endbiom.allocate("endbiom");
   depletion.allocate("depletion");
   f.allocate("f");
+  prior_function_value.allocate("prior_function_value");
+  likelihood_function_value.allocate("likelihood_function_value");
   tmp.allocate("tmp");
   #ifndef NO_AD_INITIALIZE
   tmp.initialize();
@@ -253,6 +261,7 @@ model_parameters::model_parameters(int sz,int argc,char * argv[]) :
   #ifndef NO_AD_INITIALIZE
     preds_sexr.initialize();
   #endif
+ cout <<"line 161"<<endl; 
   sigmar.allocate("sigmar");
   #ifndef NO_AD_INITIALIZE
   sigmar.initialize();
@@ -358,86 +367,60 @@ model_parameters::model_parameters(int sz,int argc,char * argv[]) :
 void model_parameters::preliminary_calculations(void)
 {
 
+#if defined(USE_ADPVM)
+
   admaster_slave_variable_interface(*this);
- //sex loop
-    for(k=1; k<=2; k++)  
-    { 
-       for (i=1; i <= nobs_srv1_age; i++)
-       {
-            for(j=1; j < nages; j++)
-            {
-                //ages go from 3 to 15
-                obs_p_srv1_age_r(k,i,j)=obs_p_srv1_age_read(k,i,j+2);
-            }
-            for(m=nages; m<=nages_read; m++)
-            {
-                obs_p_srv1_age_r(k,i,nages)+=obs_p_srv1_age_read(k,i,m);
-            }
-        }
-    }
-      for(i=1; i<=nobs_fish;i++)
-        {
-         obs_sexr(i)=(sum(obs_p_fish_r(1,i)(2,nlen+1)))/(sum(obs_p_fish_r(1,i)(2,nlen+1))+sum(obs_p_fish_r(2,i)(2,nlen+1)));
-        }
+
+#endif
+   for(i=1; i<=nobs_fish;i++)
+   {
+     obs_sexr(i) = sum(obs_p_fish(2,i))/sum(obs_p_fish(1,i) + obs_p_fish(2,i)); 
+   }
       for(i=1; i<=nobs_srv1_age;i++)
       {
-       obs_sexr_srv1(i)=(sum(obs_p_srv1_age_r(1,i)))/(sum(obs_p_srv1_age_r(1,i))+sum(obs_p_srv1_age_r(2,i)));
+       obs_sexr_srv1(i)=(sum(obs_p_srv1_age(2,i)))/(sum(obs_p_srv1_age(1,i))+sum(obs_p_srv1_age(2,i)));
       }
       for(i=1; i<=nobs_srv1_length;i++)
       {
-       obs_sexr_srv1_l(i)=(sum(obs_p_srv1_len_r(1,i)(2,nlen+1)))/(sum(obs_p_srv1_len_r(1,i)(2,nlen+1))+sum(obs_p_srv1_len_r(2,i)(2,nlen+1)));
+       obs_sexr_srv1_l(i)=(sum(obs_p_srv1_length(2,i)(2,nlen+1)))/(sum(obs_p_srv1_length(1,i))+sum(obs_p_srv1_length(2,i)));
       }
- offset=0.; 
-   for(k=1; k<=2; k++)
-    {
-       for (i=1; i <= nobs_fish; i++)
-       {
-           for (j=1; j<=nlen; j++)
-           {
-            obs_p_fish(k,i,j)=(obs_p_fish_r(k,i,j+1))/(sum(obs_p_fish_r(1,i)(2,nlen_r))+sum(obs_p_fish_r(2,i)(2,nlen_r)));
-             if (obs_p_fish(k,i,j)>0.0)
-              {
-               offset(1)-=nsamples_fish(k,i)*obs_p_fish(k,i,j)*log(obs_p_fish(k,i,j));
-              }
-           }
-       }
-    }
+  offset.initialize();
+  for (i=1; i <= nobs_fish; i++)
+  {
+  double sumtot ;
+  sumtot = sum(obs_p_fish(1,i)+obs_p_fish(2,i));
+  obs_p_fish(1,i) = obs_p_fish(1,i) / sumtot; 
+  obs_p_fish(2,i) = obs_p_fish(2,i) / sumtot; 
+  for(k=1; k<=2;k++)
+    offset(1) -= nsamples_fish(k,i)*obs_p_fish(k,i) * log(obs_p_fish(k,i)+.0001);
+  }
  //survey length offset 
- for(k=1; k<=2;k++)
- {  
-     for (i=1; i <= nobs_srv1_length; i++)
-     {
-          for (j=1; j<=nlen; j++)
-          {
-            obs_p_srv1_length(k,i,j)=obs_p_srv1_len_r(k,i,j+1)/sum(obs_p_srv1_len_r(1,i)(2,nlen_r)+obs_p_srv1_len_r(2,i)(2,nlen_r));
-             if (obs_p_srv1_length(k,i,j)>0.0)
-              {
-                 offset(2)-=nsamples_srv1_length(k,i)*obs_p_srv1_length(k,i,j)*log(obs_p_srv1_length(k,i,j));
-              }
-          }
-     }
+ for (i=1; i <= nobs_srv1_length; i++)
+ {
+   double sumtot ;
+   sumtot = sum(obs_p_srv1_length(1,i)+obs_p_srv1_length(2,i));
+   obs_p_srv1_length(1,i) = obs_p_srv1_length(1,i) / sumtot; 
+   obs_p_srv1_length(2,i) = obs_p_srv1_length(2,i) / sumtot; 
+   for(k=1; k<=2;k++)
+     offset(2) -= nsamples_srv1_length(k,i)*obs_p_srv1_length(k,i) * log(obs_p_srv1_length(k,i)+.0001);
  }
  //survey age offset 
-    for(k=1; k<=2;k++)
-    {  
-       for (i=1; i <= nobs_srv1_age; i++)
-       {
-         obs_p_srv1_age(k,i)=obs_p_srv1_age_r(k,i)/(sum(obs_p_srv1_age_r(1,i))+sum(obs_p_srv1_age_r(2,i)));
-         for (j=1; j<=nages; j++)
-         {
-            if (obs_p_srv1_age(k,i,j)>0.0)
-             {
-               offset(3)-=nsamples_srv1_age(k,i)*obs_p_srv1_age(k,i,j)*log(obs_p_srv1_age(k,i,j));
-             }
-         }
-       }
-    }
+ for (i=1; i <= nobs_srv1_age; i++)
+ {
+   double sumtot ;
+   sumtot = sum(obs_p_srv1_age(1,i)+obs_p_srv1_age(2,i));
+   obs_p_srv1_age(1,i) = obs_p_srv1_age(1,i) / sumtot; 
+   obs_p_srv1_age(2,i) = obs_p_srv1_age(2,i) / sumtot; 
+   for(k=1; k<=2;k++)
+     offset(3) -= nsamples_srv1_age(k,i)*obs_p_srv1_age(k,i) * log(obs_p_srv1_age(k,i)+.0001);
+ }
   M(1)=0.20;
   M(2)=0.35;
 }
 
 void model_parameters::userfunction(void)
 {
+  f =0.0;
   ofstream& evalout= *pad_evalout;
    get_selectivity();
    get_mortality();
@@ -949,7 +932,7 @@ void model_parameters::evaluate_the_objective_function(void)
    f+=sprpen;
 }
 
-void model_parameters::report()
+void model_parameters::report(const dvector& gradients)
 {
  adstring ad_tmp=initial_params::get_reportfile_name();
   ofstream report((char*)(adprogram_name + ad_tmp));
@@ -976,7 +959,7 @@ void model_parameters::report()
   }
   report << "Observed Survey 1:  '1961','1973','1984','1987','1990','1993','1996','1999','2001','2003','2005','2007','2009','2011','2013'" << endl;
   report << obs_srv1 << endl;
-  report << "Survey Q: 'Q'" << endl;
+  report << "Survey catchability Q: 'Q'" << endl;
   report << q1 << endl;
   report << "natural mortality females, males: 'FemM','MaleM'" << endl;
   report << M << endl;
@@ -1438,7 +1421,8 @@ int main(int argc,char * argv[])
 {
     ad_set_new_handler();
   ad_exit=&ad_boundf;
-  arrmblsize = 2000000;
+  arrmblsize = 2000000; 
+  gradient_structure::set_MAX_NVAR_OFFSET(300);  
   gradient_structure::set_GRADSTACK_BUFFER_SIZE(3000000); // this may be incorrect in
   // the AUTODIF manual.
   gradient_structure::set_CMPDIF_BUFFER_SIZE(100000000);
@@ -1447,12 +1431,7 @@ int main(int argc,char * argv[])
   R_out.open("R_input.txt");
     gradient_structure::set_NO_DERIVATIVES();
     gradient_structure::set_YES_SAVE_VARIABLES_VALUES();
-  #if defined(__GNUDOS__) || defined(DOS386) || defined(__DPMI32__)  || \
-     defined(__MSVC32__)
-      if (!arrmblsize) arrmblsize=150000;
-  #else
-      if (!arrmblsize) arrmblsize=25000;
-  #endif
+    if (!arrmblsize) arrmblsize=15000000;
     model_parameters mp(arrmblsize,argc,argv);
     mp.iprint=10;
     mp.preliminary_calculations();

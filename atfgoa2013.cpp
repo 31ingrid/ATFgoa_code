@@ -7,6 +7,7 @@
   long hour,minute,second;
   double elapsed_time;
 #include <admodel.h>
+#include <contrib.h>
 
   extern "C"  {
     void ad_boundf(int i);
@@ -20,6 +21,7 @@ model_data::model_data(int argc,char * argv[]) : ad_comm(argc,argv)
   endyr.allocate("endyr");
   styr_fut.allocate("styr_fut");
   endyr_fut.allocate("endyr_fut");
+  M.allocate(1,2,"M");
   phase_F40.allocate("phase_F40");
   median_rec.allocate("median_rec");
   median_rec_yrs.allocate("median_rec_yrs");
@@ -51,12 +53,15 @@ model_data::model_data(int argc,char * argv[]) : ad_comm(argc,argv)
   obs_p_srv1_age_read.allocate(1,2,1,nobs_srv1_age,1,nages_read,"obs_p_srv1_age_read");
   obs_p_fish_r.allocate(1,2,1,nobs_fish,1,nlen_r,"obs_p_fish_r");
   catch_bio.allocate(styr,endyr,"catch_bio");
+cout<<catch_bio<<endl;
   obs_srv1.allocate(1,nobs_srv1,"obs_srv1");
   obs_srv1_sd.allocate(1,nobs_srv1,"obs_srv1_sd");
   wt.allocate(1,2,1,nages,"wt");
+cout<<"wt"<<wt<<std::endl;
   maturity.allocate(1,nages,"maturity");
+cout<<"maturity"<<maturity<<std::endl;
   lenage.allocate(1,2,1,nages,1,nlen_r-1,"lenage");
-  offset_const.allocate("offset_const");
+cout<<"lenage"<<lenage<<std::endl; 
   cv_srv1.allocate(1,nobs_srv1);
   nlen=nlen_r-1;
   styr_rec=styr-nages+1;
@@ -79,6 +84,14 @@ void model_parameters::initializationfunction(void)
   log_avg_fmort.set_initial_value(-5.);
   q1.set_initial_value(1.);
   fmort_dev.set_initial_value(0.00001);
+  fish_slope_f.set_initial_value(.4);
+  fish_sel50_f.set_initial_value(5.);
+  fish_slope_m.set_initial_value(.1);
+  fish_sel50_m.set_initial_value(8.);
+  srv1_slope_f.set_initial_value(.8);
+  srv1_sel50_f.set_initial_value(4.);
+  srv1_slope_m.set_initial_value(.4);
+  srv1_sel50_m.set_initial_value(8);
 }
 
 model_parameters::model_parameters(int sz,int argc,char * argv[]) : 
@@ -135,10 +148,6 @@ model_parameters::model_parameters(int sz,int argc,char * argv[]) :
   totn_srv1.allocate(1,2,styr,endyr,"totn_srv1");
   #ifndef NO_AD_INITIALIZE
     totn_srv1.initialize();
-  #endif
-  M.allocate(1,2,"M");
-  #ifndef NO_AD_INITIALIZE
-    M.initialize();
   #endif
   explbiom.allocate(styr,endyr,"explbiom");
   #ifndef NO_AD_INITIALIZE
@@ -216,6 +225,10 @@ model_parameters::model_parameters(int sz,int argc,char * argv[]) :
   #ifndef NO_AD_INITIALIZE
   rec_like.initialize();
   #endif
+  rec_like2.allocate("rec_like2");
+  #ifndef NO_AD_INITIALIZE
+  rec_like2.initialize();
+  #endif
   catch_like.allocate("catch_like");
   #ifndef NO_AD_INITIALIZE
   catch_like.initialize();
@@ -242,6 +255,8 @@ model_parameters::model_parameters(int sz,int argc,char * argv[]) :
   endbiom.allocate("endbiom");
   depletion.allocate("depletion");
   f.allocate("f");
+  prior_function_value.allocate("prior_function_value");
+  likelihood_function_value.allocate("likelihood_function_value");
   tmp.allocate("tmp");
   #ifndef NO_AD_INITIALIZE
   tmp.initialize();
@@ -352,14 +367,17 @@ model_parameters::model_parameters(int sz,int argc,char * argv[]) :
   #ifndef NO_AD_INITIALIZE
   like_q.initialize();
   #endif
- cout<<"wt_like"<<endl;
- cout<< wt_like <<endl;
 }
 
 void model_parameters::preliminary_calculations(void)
 {
 
+#if defined(USE_ADPVM)
+
   admaster_slave_variable_interface(*this);
+
+#endif
+ //cout<<"to prelim calcs"<<endl;
  //sex loop
     for(k=1; k<=2; k++)  
     { 
@@ -370,7 +388,7 @@ void model_parameters::preliminary_calculations(void)
                 //ages go from 3 to 15
                 obs_p_srv1_age_r(k,i,j)=obs_p_srv1_age_read(k,i,j+2);
             }
-            for(m=nages; m<=nages_read; m++)
+            for(m=nages; m<=nages_read; m++)  //error here you are adding 13+ rather than 15+
             {
                 obs_p_srv1_age_r(k,i,nages)+=obs_p_srv1_age_read(k,i,m);
             }
@@ -379,20 +397,29 @@ void model_parameters::preliminary_calculations(void)
       for(i=1; i<=nobs_fish;i++)
         {
          obs_sexr(i)=(sum(obs_p_fish_r(1,i)(2,nlen+1)))/(sum(obs_p_fish_r(1,i)(2,nlen+1))+sum(obs_p_fish_r(2,i)(2,nlen+1)));
-        }
+        } 
+  cout<<"obs_sexr"<<obs_sexr<<std::endl;
       for(i=1; i<=nobs_srv1_age;i++)
       {
        obs_sexr_srv1(i)=(sum(obs_p_srv1_age_r(1,i)))/(sum(obs_p_srv1_age_r(1,i))+sum(obs_p_srv1_age_r(2,i)));
-      }
+      }   
       for(i=1; i<=nobs_srv1_length;i++)
       {
        obs_sexr_srv1_l(i)=(sum(obs_p_srv1_len_r(1,i)(2,nlen+1)))/(sum(obs_p_srv1_len_r(1,i)(2,nlen+1))+sum(obs_p_srv1_len_r(2,i)(2,nlen+1)));
-      }
+      } 
+  cout<<"obs_sexr_srv1"<<obs_sexr_srv1<<std::endl; 
+ // cout<< " thru sex ratio "<<endl;
+ //Compute offset for multinomial
+ // offset is a constant nplog(p) is added to the likelihood     
+ // magnitude depends on nsamples(sample size) and p's_
+  //k is sex loop
  offset=0.; 
    for(k=1; k<=2; k++)
     {
        for (i=1; i <= nobs_fish; i++)
        {
+         //make observations proportions by year      
+         //fishery offset
            for (j=1; j<=nlen; j++)
            {
             obs_p_fish(k,i,j)=(obs_p_fish_r(k,i,j+1))/(sum(obs_p_fish_r(1,i)(2,nlen_r))+sum(obs_p_fish_r(2,i)(2,nlen_r)));
@@ -408,6 +435,8 @@ void model_parameters::preliminary_calculations(void)
  {  
      for (i=1; i <= nobs_srv1_length; i++)
      {
+  
+     //   cout<< " to obs_p_srv1_length "<<endl;
           for (j=1; j<=nlen; j++)
           {
             obs_p_srv1_length(k,i,j)=obs_p_srv1_len_r(k,i,j+1)/sum(obs_p_srv1_len_r(1,i)(2,nlen_r)+obs_p_srv1_len_r(2,i)(2,nlen_r));
@@ -424,6 +453,7 @@ void model_parameters::preliminary_calculations(void)
        for (i=1; i <= nobs_srv1_age; i++)
        {
          obs_p_srv1_age(k,i)=obs_p_srv1_age_r(k,i)/(sum(obs_p_srv1_age_r(1,i))+sum(obs_p_srv1_age_r(2,i)));
+         //cout<<obs_p_srv1(i)<<endl;
          for (j=1; j<=nages; j++)
          {
             if (obs_p_srv1_age(k,i,j)>0.0)
@@ -433,19 +463,23 @@ void model_parameters::preliminary_calculations(void)
          }
        }
     }
-  M(1)=0.20;
-  M(2)=0.35;
+  //cout<<endl<<"to end of offset"<<endl;
 }
 
 void model_parameters::userfunction(void)
 {
+  f =0.0;
   ofstream& evalout= *pad_evalout;
    get_selectivity();
+ //cout<<"sel"<<endl;
    get_mortality();
+ //cout<<"mort"<<endl;
     surv(1)=mfexp(-1.0* M(1));
     surv(2)=mfexp(-1.0* M(2));
    get_numbers_at_age();
+ //cout<<"numbers at age"<<endl;
    get_catch_at_age();
+ //cout<<"catch at age"<<endl;
   if (active(F40))
     compute_spr_rates();
   if (last_phase())
@@ -471,12 +505,34 @@ void model_parameters::userfunction(void)
    evaluate_the_objective_function();
 }
 
+void model_parameters::get_growthmatrix(void)
+{
+  ofstream& evalout= *pad_evalout;
+ //       len_len(2,ilen,il2)=cumd_norm((length_bins(il2)+2.5-mean_length(2,ilen))/sd_mean_length(2,ilen));
+ //     }
+ //     if(il2>1)
+ //     {
+ //       rec_len(il2)=cumd_norm((length_bins(il2)-length_rec)/var_rec)-cumd_norm((length_bins(il2-1)-length_rec)/var_rec);
+ //       len_len(1,ilen,il2)=cumd_norm((length_bins(il2)+2.5-mean_length(1,ilen))/sd_mean_length(1,ilen))-cumd_norm((length_bins(il2-1)+2.5-mean_length(1,ilen))/sd_mean_length(1,ilen));          
+ //       len_len(2,ilen,il2)=cumd_norm((length_bins(il2)+2.5-mean_length(2,ilen))/sd_mean_length(2,ilen))-cumd_norm((length_bins(il2-1)+2.5-mean_length(2,ilen))/sd_mean_length(2,ilen));         
+     //       cout<<(length_bins(il2)-mean_length(1,ilen))/sd_mean_length(1,ilen)<<endl;
+     //        cout<<cumd_norm((length_bins(il2)-mean_length(1,ilen))/sd_mean_length(1,ilen))<<endl;
+     //        cout<<len_len(1,ilen,il2-1)<<endl;
+  //    }
+ //     sum_len(1,ilen)+=len_len(1,ilen,il2);
+ //     sum_len(2,ilen)+=len_len(2,ilen,il2);
+ //   }
+ //   len_len(1,ilen,nlenm)=len_len(1,ilen,nlenm)+1-sum_len(1,ilen);
+ //   len_len(2,ilen,nlenm)=len_len(2,ilen,nlenm)+1-sum_len(2,ilen);
+ // }
+}
+
 void model_parameters::get_selectivity(void)
 {
   ofstream& evalout= *pad_evalout;
   if(active(log_selcoffs_fish))
   {
-   phase_logistic_sel=-2;
+  // phase_logistic_sel=-2;  IS 2015 testing
     for(k=1;k<=2;k++)
     {
       for (j=1;j<=nselages;j++)
@@ -485,6 +541,7 @@ void model_parameters::get_selectivity(void)
       }
     }
    //sets selectivity of ages older than nselages to selectivity at nselages  
+   //cout<<"to nselages loop"<<endl;
    for(k=1;k<=2;k++)
    {
      for (j=nselages+1;j<=nages;j++)
@@ -499,6 +556,7 @@ void model_parameters::get_selectivity(void)
  //vector=vector-scalar same as  vector-=scalar  
  //scaling selectivities by subracting the mean so exp(mean(s))=1.   
  //selectivities can be greater than 1 but mean is 1.
+ //cout<<"calc log_sel_fish"<<endl;
   for(k=1;k<=2;k++)
     {
       log_sel_fish(k)-=log(mean(mfexp(log_sel_fish(k))));
@@ -507,6 +565,7 @@ void model_parameters::get_selectivity(void)
        {
          sel(k)=sel(k)*sexr_param_fish;
        }
+      //cout<<"sel survey"<<sel_srv1<<endl;
     }
  }
   else
@@ -524,11 +583,12 @@ void model_parameters::get_selectivity(void)
              sel(1,j)=sel(1,j-1);
              sel(2,j)=sel(2,j-1);
             }
+ 
           } 
      }
   if(active(log_selcoffs_srv1))
   {
-   phase_logistic_sel_srv1=-2;
+  // phase_logistic_sel_srv1=-2;
    for(k=1;k<=2;k++)
     { 
       for (j=1;j<=nselages_srv1;j++)
@@ -559,6 +619,7 @@ void model_parameters::get_selectivity(void)
        {
          sel_srv1(k)=sel_srv1(k)*sexr_param_srv;
        }
+      //cout<<"sel survey"<<sel_srv1<<endl;
     }
  }
   else
@@ -578,6 +639,8 @@ void model_parameters::get_selectivity(void)
             }
           } 
      }
+  	 //cout<<"sel fishery"<<sel<<std::endl;
+	 //cout<<"sel survey "<<sel_srv1<<std::endl;   
 }
 
 void model_parameters::get_mortality(void)
@@ -598,6 +661,7 @@ void model_parameters::get_mortality(void)
    }
  }
     S=mfexp(-1.0*Z);
+ // cout<<"to end of get_mortality"<<endl;
 }
 
 void model_parameters::get_numbers_at_age(void)
@@ -608,8 +672,11 @@ void model_parameters::get_numbers_at_age(void)
       maxsel_srv1(1)=max(sel_srv1(2)); 
       maxsel_srv1(2)=maxsel_srv1(1);
      }
+ //   maxsel_srv1(1)=max(sel_srv1(1));
+ // cout<<"begin numbers at age"<<endl;
   int itmp;
  //calc initial population  
+  
   for (j=1;j<nages;j++)
     {
       itmp=styr+1-j;
@@ -617,30 +684,50 @@ void model_parameters::get_numbers_at_age(void)
       natage(2,styr,j)=mfexp(mean_log_rec-(M(2)*double(j-1))+rec_dev(itmp));
     }
     itmp=styr+1-nages;
+ //cout<<"initial 1"<<endl;
+ //cout<<"to last age "<<endl; 
     natage(1,styr,nages)=mfexp(mean_log_rec+rec_dev(itmp)-(M(1)*(nages-1)))/(1.- surv(1));
     natage(2,styr,nages)=mfexp(mean_log_rec+rec_dev(itmp)-(M(2)*(nages-1)))/(1.- surv(2));
+ //cout<<"to next years"<<endl;
  // Now do for next several years----------------------------------
-  for (i=styr+1;i<=endyr;i++)
+  for (i=styr+1;i<=endyr;i++)      //added else clause in 2015 to match BSAI code
+  {  
+   if(i<=(endyr-1)) 
     {
       natage(1,i,1)=mfexp(mean_log_rec+rec_dev(i));
       natage(2,i,1)=natage(1,i,1);
     }
+     else
+     {
+     natage(1,i,1)=median_rec;
+      natage(2,i,1)=natage(1,i,1);
+      }
+    }
+  //cout<<"initial 2"<<endl;
  //numbers at age
   for(k=1;k<=2;k++)
     {
       for (i=styr;i< endyr;i++)
        {
+         //cout<<"to subvector op"<<endl;
          //subvector - avoids writing a j loop  =++ increments the right side 
          //(1,nages-1) to 1+1 to nages-1+1 then does the assignment x(i)(1,n) 
          //takes the ith row of x the columns 1 to n
+         //      natage(k,i+1)(2,nages)=++elem_prod(natage(k,i)(1,nages-1),S(k,i)(1,nages-1));
         for(j=1;j<nages;j++)
           {
             natage(k,i+1,j+1)=natage(k,i,j)*S(k,i,j); 
           }
          //accumulates oldest ages
+         // cout<<"done with j loop"<<endl;
          natage(k,i+1,nages)+=natage(k,i,nages)*S(k,i,nages);
+        // cout<<"done with natage nages"<<endl;
+        //popn is exploitable numbers
          popn(k,i)= natage(k,i)*sel(k);
+        // cout<<"popn "<<endl;
+        // cout<<popn(k,i)<<endl;
      }
+     // cout<<"to popn"<<endl; 
      popn(k,endyr)=natage(k,endyr)*sel(k);
     }
    for (i=styr;i<=endyr;i++)
@@ -653,6 +740,7 @@ void model_parameters::get_numbers_at_age(void)
          totn_srv1(k,i)=(natage(k,i)*sel_srv1(k));
        }
     }
+ //cout<<"2nd loop"<<endl;
    //predicted survey values
   fspbio=0.; 
    for (i=styr;i<=endyr;i++)
@@ -664,10 +752,17 @@ void model_parameters::get_numbers_at_age(void)
       for(k=1;k<=2;k++)
       {
           pred_srv1(i)+=q1*(natage(k,i)*elem_prod(sel_srv1(k)/maxsel_srv1(k),wt(k)));
+       //next line used to fix q1 to 1.0 - problem is if you start from a bin file, even if the bounds
+        // are set different in the tpl file the program will take to value from the bin file and use that 
+       //   pred_srv1(i)=1.0*(natage(i)*elem_prod(sel_srv1,wt));
        explbiom(i)+=natage(k,i)*elem_prod(sel(k),wt(k))/maxsel_fish;
        pred_bio(i)+=natage(k,i)*wt(k);
+ // cout<<" to lenage calc"<<endl;
        pred_p_srv1_len(k,i)=elem_prod(sel_srv1(k),natage(k,i))*lenage(k)/(totn_srv1(1,i)+totn_srv1(2,i));
+  //   pred_p_srv1_len(k,i)=pred_p_srv1_len_1(k,i)/sum(pred_p_srv1_len_1(1,i)+pred_p_srv1_len_1(2,i)); 
        pred_p_srv1_age(k,i)=elem_prod(sel_srv1(k),natage(k,i))/(totn_srv1(1,i)+totn_srv1(2,i));
+ //      }
+ //   pred_p_srv1_age(k,i)=pred_p_srv1_age_1(k,i)/sum(pred_p_srv1_age_1(1,i)+pred_p_srv1_age_1(2,i));
       }
     }
     biomassrep=pred_bio;
@@ -678,6 +773,7 @@ void model_parameters::get_numbers_at_age(void)
     } 
     depletion=pred_bio(endyr)/pred_bio(styr);
     endbiom=pred_bio(endyr);
+  //  cout<<"end get numbers at age"<<endl;
 }
 
 void model_parameters::get_catch_at_age(void)
@@ -697,11 +793,13 @@ void model_parameters::get_catch_at_age(void)
         pred_p_fish(k,i)=elem_prod(sel(k),natage(k,i))*lenage(k)/(popn(1,i)+popn(2,i));
       }
    }
+ // cout<<"end catch at age"<<endl;
 }
 
 void model_parameters::Future_projections(void)
 {
   ofstream& evalout= *pad_evalout;
+ //cout<<"to future proj"<<endl;
   for(k=1;k<=2;k++)
   {
     nage_future(k,styr_fut)(2,nages)=++elem_prod(natage(k,endyr)(1,nages-1),S(k,endyr)(1,nages-1));
@@ -770,6 +868,7 @@ void model_parameters::Future_projections(void)
             catch_future(l,i)   += catage_future(k,i)*wt(k);
            }
         future_biomass(l,i) += nage_future(k,i)*wt(k);
+ 
       }   //end loop over future years
      }   //end loop over sex
      fspbiom_fut(l)=0.;
@@ -781,6 +880,7 @@ void model_parameters::Future_projections(void)
       }
      }
     }   //End of loop over F's
+  
 }
 
 void model_parameters::compute_spr_rates(void)
@@ -790,6 +890,7 @@ void model_parameters::compute_spr_rates(void)
   SB0=0.;
   SBF40=0.;
   SBF35=0.;
+  //SBF30=0.;
   AMeanRec=mean(mfexp(mean_log_rec+rec_dev(81,endyr)));
   // Initialize the recruit (1) for each F  (F40 etc)
   for (i=1;i<=3;i++)
@@ -800,10 +901,14 @@ void model_parameters::compute_spr_rates(void)
     Nspr(2,j)=Nspr(2,j-1)*mfexp(-1.*(M(1)+F40*sel(1,j-1)/maxsel_fish));
     Nspr(3,j)=Nspr(3,j-1)*mfexp(-1.*(M(1)+F35*sel(1,j-1)/maxsel_fish));
   }
+  //cout<<F40<<" "<<F30<<" "<<Nspr<<endl; 
+ // cout<<"spr calc"<<endl;
  // Now do plus group
   Nspr(1,nages)=Nspr(1,nages-1)*mfexp(-1.*M(1))/(1.-mfexp(-1.*M(1)));
   Nspr(2,nages)=Nspr(2,nages-1)*mfexp(-1.* (M(1)+F40*sel(1,nages-1)/maxsel_fish))/(1.-mfexp(-1.*(M(1)+F40*sel(1,nages)/maxsel_fish)));
   Nspr(3,nages)=Nspr(3,nages-1)*mfexp(-1.* (M(1)+F35*sel(1,nages-1)/maxsel_fish))/(1.-mfexp(-1.*(M(1)+F35*sel(1,nages)/maxsel_fish)));
+ // Nspr(3,nages)=Nspr(3,nages-1)*mfexp(-1.* (M(1)+F30*sel(1,nages-1)/maxsel_fish))/ (1.-mfexp(-1.*(M(1)+F30*sel(1,nages)/maxsel_fish)));
+ //cout<<"plus group"<<endl;
   for (j=1;j<=nages;j++)
   {
    // Kill them off till- use fraction of the year e.g. april=0.25 - not for atf they spawn in winter so put in 0.0
@@ -811,42 +916,53 @@ void model_parameters::compute_spr_rates(void)
     SB0    += Nspr(1,j)*maturity(j)*wt(1,j)*mfexp(-0.0*M(1));
     SBF40  += Nspr(2,j)*maturity(j)*wt(1,j)*mfexp(-0.0*(M(1)+F40*sel(1,j)/maxsel_fish));
     SBF35  += Nspr(3,j)*maturity(j)*wt(1,j)*mfexp(-0.0*(M(1)+F35*sel(1,j)/maxsel_fish));
+  //  SBF30  += Nspr(3,j)*maturity(j)*wt(1,j)*mfexp(-0.0*(M(1)+F30*sel(1,j)/maxsel_fish));
    }
+ // cout<<"kill thenm off"<<endl;
   sprpen    = 300.*square((SBF40/SB0)-0.4);
   sprpen   += 300.*square((SBF35/SB0)-0.35);
   B0  = AMeanRec*SB0  ;
   B40 = AMeanRec*SBF40  ;
   B35 = AMeanRec*SBF35  ;
+ //cout<<"sbr/sno "<<endl;
+ //cout<<SBF40/SB0<<" "<<SBF30/SB0<<endl;
 }
 
 void model_parameters::evaluate_the_objective_function(void)
 {
   ofstream& evalout= *pad_evalout;
-  age_like=0.; //just having the . as part of the number identifies it as a floating point number (a double)
+  age_like=0.;
   sel_like=0.;
-  fpen=0.;
-  rec_like=0.;
-  surv_like=0.;
-  catch_like=0.;
-  f=0.;
-  like_natm=0.;
-  like_q=0.;
+  fpen=.0;
+  rec_like=.0;
+  rec_like2=0.;
+  surv_like=.0;
+  catch_like=.0;
+  f=.0;
+  like_natm=0.;  //not used
+  like_q=0.;               //not used
  if (active(rec_dev))
    {
     age_like=0.;
     int ii;
     //recruitment likelihood - norm2 is sum of square values   
+    //cout<<"to rec_like"<<endl;
+    //cout<<" rec_devs = "<<rec_dev<<endl; 
     rec_like=norm2(rec_dev(styr_rec,endyr));
     f+=rec_like;
+    f+=rec_like2;
+    //cout<<"to loop"<<endl;
      for(k=1;k<=2;k++)
      {
         for (i=1; i <= nobs_fish; i++)
         {
           ii=yrs_fish(i);
+          //   cout<<pred_p_fish(ii)<<endl<<endl;
           //fishery length likelihood 
            for (j=1; j<=nlen; j++)
            {
-             age_like(1)-=nsamples_fish(k,i)*(offset_const+obs_p_fish(k,i,j))*log(pred_p_fish(k,ii,j)+offset_const);
+             age_like(1)-=nsamples_fish(k,i)*(0.0001+obs_p_fish(k,i,j))*log(pred_p_fish(k,ii,j)+0.0001);        //was 1e-5
+             //cout << age_like << " " << i << " "<<j<< endl;
             }
          }
       }
@@ -861,12 +977,13 @@ void model_parameters::evaluate_the_objective_function(void)
             //survey likelihood 
              for (j=1; j<=nlen; j++)
              {
-               age_like(2)-=nsamples_srv1_length(k,i)*(offset_const+obs_p_srv1_length(k,i,j))*log(pred_p_srv1_len(k,ii,j)+offset_const);
+               age_like(2)-=nsamples_srv1_length(k,i)*(1e-4+obs_p_srv1_length(k,i,j))*log(pred_p_srv1_len(k,ii,j)+1e-4);  //was 1e-3
+               //cout << age_like << " " << i << " "<<j<< endl;
              }
          }
        }
      age_like(2)-=offset(2);
-  //bracket for active(fish_slope_f) 
+  //bracket for active(fish_slope_f)
   //survey ages
          for(k=1;k<=2;k++)
          {
@@ -876,30 +993,35 @@ void model_parameters::evaluate_the_objective_function(void)
               //survey likelihood 
               for (j=1; j<=nages; j++)
               {
-                age_like(3)-=nsamples_srv1_age(k,i)*(offset_const+obs_p_srv1_age(k,i,j))*log(pred_p_srv1_age(k,ii,j)+offset_const);
+                age_like(3)-=nsamples_srv1_age(k,i)*(1e-4+obs_p_srv1_age(k,i,j))*log(pred_p_srv1_age(k,ii,j)+1e-4);     //was 1e-3   
+ //               cout << age_like << " " << i << " "<<j<< endl;
               }
             }
          } 
-      age_like(3)-=offset(3);
-      f+=like_wght(1)*age_like(1);     
-      f+=like_wght(2)*age_like(2);
-      f+=like_wght(3)*age_like(3);
+      age_like(3)-=offset(3);    
+ //     0.25 1.0 1.0 50.0 1.0
+      f+=like_wght(1)*age_like(1);  //fishery length data   
+      f+=like_wght(2)*age_like(2);    //survey length
+      f+=like_wght(3)*age_like(3);   //age data
    //end of if(active (rec_dev))
     }
+  //cout<<" f before survey = "<<f<<endl;
   // Fit to indices (lognormal) 
   //weight each years estimate by 1/(2*variance) - use cv of biomass in sqrt(log(cv^2+1)) as sd of log(biomass) 
-   surv_like = norm2(elem_div(log(obs_srv1+offset_const)-log(pred_srv1(yrs_srv1)+offset_const),sqrt(2)*sqrt(log(elem_prod(cv_srv1,cv_srv1)+1.0))));
+   surv_like = norm2(elem_div(log(obs_srv1+.0001)-log(pred_srv1(yrs_srv1)+.0001),sqrt(2)*sqrt(log(elem_prod(cv_srv1,cv_srv1)+1.0))));    //was 0.000001
  //this subtracts the log(sd) from the likelihood - is a constant so I'm not adding it.
-    catch_like=norm2(log(catch_bio+offset_const)-log(pred_catch+offset_const));
+ //   surv_like-= sum(log(sqrt(log(elem_prod(cv_srv1,cv_srv1)+1.0))));
+   // surv_like = norm2(log(obs_srv1+.01)-log(pred_srv1(yrs_srv1)+.01));
+    catch_like=norm2(log(catch_bio+.0001)-log(pred_catch+.0001));       //was 0.000001 
  //selectivity likelihood is penalty on how smooth selectivities are   
- //here are taking the sum of squares of the second differences
+ //here are taking the sum of squares of the second differences 
   if(active(log_selcoffs_fish))
   {  
     sel_like(1)=wt_like(1)*norm2(first_difference(first_difference(log_sel_fish(1))));
     sel_like(3)=wt_like(3)*norm2(first_difference(first_difference(log_sel_fish(2))));
    for (j=1;j<nages;j++)
    {
-    if(monot_sel>0.0001)
+    if(monot_sel==1)
     { 
      if (log_sel_fish(1,j)>log_sel_fish(1,j+1))
         sel_like(1)+=wt_like(5)*square(log_sel_fish(1,j)-log_sel_fish(1,j+1));
@@ -929,18 +1051,20 @@ void model_parameters::evaluate_the_objective_function(void)
     f+=1.*square(avgsel_srv1(1));
     f+=1.*square(avgsel_srv1(2));
   }
-    f+=like_wght(5)*surv_like;  
-    f+=like_wght(4)*catch_like;
+    f+=like_wght(5)*surv_like;   //like_wgth(5) is 1
+  //cout<<" f after survey = "<<f<<endl;  
+    f+=like_wght(4)*catch_like;  //like_wgth(4) is 50
+  //cout<<" f after catch = "<<f<<endl;
   // Phases less than 3, penalize High F's
     if (current_phase()<2)
      {
        //F's are low for arrowtooth changed the value to compare from .2 to .001
        //don't know if makes any difference since the penalty is reduced at the end
-       fpen=10.*norm2(mfexp(fmort_dev+log_avg_fmort)-.001);
+       fpen=10.*norm2(mfexp(fmort_dev+log_avg_fmort)-.0001);   //was0.001
      }
     else
      {
-       fpen=.01*norm2(mfexp(fmort_dev+log_avg_fmort)-.001);
+       fpen=.01*norm2(mfexp(fmort_dev+log_avg_fmort)-.0001);    //was0.001 
      }
     if (active(fmort_dev))
       {
@@ -948,9 +1072,10 @@ void model_parameters::evaluate_the_objective_function(void)
       }
    f+=fpen;
    f+=sprpen;
+   // cout<<" f after fpen = "<<f<<endl;
 }
 
-void model_parameters::report()
+void model_parameters::report(const dvector& gradients)
 {
  adstring ad_tmp=initial_params::get_reportfile_name();
   ofstream report((char*)(adprogram_name + ad_tmp));
@@ -1292,6 +1417,8 @@ void model_parameters::report()
   R_out << "$future.Estimated.numbers.of.male.fish" << endl;
   R_out << nage_future(2) << endl;  
   }
+  
+  
   report << "SARA form for Angie Grieg" << endl;
   report << "ATF        # stock  " << endl;
   report << "BSAI       # region     (AI AK BOG BSAI EBS GOA SEO WCWYK)" << endl;
@@ -1393,6 +1520,7 @@ void model_parameters::report()
       report<< endl;
  report<<"#STOCKNOTES"<<endl;
  report<<"SAFE report indicates that this stock was not subjected to overfishing in 2012 and is neither overfished nor approaching a condition of being overfished in 2013."<<endl;
+ 
 }
 
 void model_parameters::set_runtime(void)
@@ -1450,12 +1578,7 @@ int main(int argc,char * argv[])
   R_out.open("R_input.txt");
     gradient_structure::set_NO_DERIVATIVES();
     gradient_structure::set_YES_SAVE_VARIABLES_VALUES();
-  #if defined(__GNUDOS__) || defined(DOS386) || defined(__DPMI32__)  || \
-     defined(__MSVC32__)
-      if (!arrmblsize) arrmblsize=150000;
-  #else
-      if (!arrmblsize) arrmblsize=25000;
-  #endif
+    if (!arrmblsize) arrmblsize=15000000;
     model_parameters mp(arrmblsize,argc,argv);
     mp.iprint=10;
     mp.preliminary_calculations();

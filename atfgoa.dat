@@ -22,7 +22,7 @@
 #(12) for monotonically increasing survey selectivties with smoother 0 off 1 on
   0
 #(13) phase for logistic selectivity curve fishery
- -4
+ 4
 #(14) phase for smooth selectivity curve fishery
   4
 #(15) phase for logistic selectivity curve survey

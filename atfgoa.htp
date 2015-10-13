@@ -10,7 +10,6 @@ class model_data : public ad_comm{
   data_int phase_F40;
   data_number median_rec;
   data_int nages;
-  data_int nages_read;
   data_int nselages;
   data_int nselages_srv1;
   data_int monot_sel;
@@ -20,7 +19,7 @@ class model_data : public ad_comm{
   data_int phase_logistic_sel_srv1;
   data_int phase_selcoffs_srv1;
   data_vector wt_like;
-  data_int nlen_r;
+  data_int nlen;
   data_int nobs_fish;
   data_ivector yrs_fish;
   data_matrix nsamples_fish;
@@ -33,9 +32,9 @@ class model_data : public ad_comm{
   data_ivector yrs_srv1_age;
   data_vector like_wght;
   data_matrix nsamples_srv1_age;
-  data_3array obs_p_srv1_len_r;
-  data_3array obs_p_srv1_age_read;
-  data_3array obs_p_fish_r;
+  data_3array obs_p_srv1_length;
+  data_3array obs_p_srv1_age;
+  data_3array obs_p_fish;
   data_vector catch_bio;
   data_vector obs_srv1;
   data_vector obs_srv1_sd;
@@ -50,11 +49,7 @@ class model_data : public ad_comm{
   int k;
   int ii;
   int m;
-  int nlen;
-  d3_array obs_p_srv1_age;
-  d3_array obs_p_srv1_age_r;
-  d3_array obs_p_srv1_length;
-  d3_array obs_p_fish;
+  d4_array test;
   dvector obs_sexr;
   dvector obs_sexr_srv1;
   dvector obs_sexr_srv1_l;
@@ -91,6 +86,10 @@ public:
   {
     return (initial_params::current_phase
       >=initial_params::max_number_phases);
+  }
+  static prevariable current_feval(void)
+  {
+    return *objective_function_value::pobjfun;
   }
 private:
   ivector integer_control_flags;
@@ -152,6 +151,8 @@ private:
   param_stddev_vector fspbiorep;
   param_stddev_number endbiom;
   param_stddev_number depletion;
+  param_number prior_function_value;
+  param_number likelihood_function_value;
   objective_function_value f;
   param_number tmp;
   param_vector pred_sexr;
@@ -184,7 +185,7 @@ private:
   param_number like_q;
 public:
   virtual void userfunction(void);
-  virtual void report(void);
+  virtual void report(const dvector& gradients);
   virtual void final_calcs(void);
   model_parameters(int sz,int argc, char * argv[]);
   virtual void initializationfunction(void);

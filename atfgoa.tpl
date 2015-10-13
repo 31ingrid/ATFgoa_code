@@ -7,12 +7,9 @@ DATA_SECTION
   init_int endyr 	//(2) end year
   init_int styr_fut	//(3) start year of projections (endyr+1)  
   init_int endyr_fut //(4) end year of projections
-//read only female M when doing profile like on male M
   init_int phase_F40 //(5)
   init_number median_rec  //(6) 
-  init_int nages     //(7) number of ages in the model (n=13, from 3 to 15+) 
-  init_int nages_read //(8) (n=21)
-   
+  init_int nages     //(7) number of ages in the model (n=21) 
  //selectivity is set to the selectivity at nselages-1 after age nselages 
   init_int nselages  //(9)
   init_int nselages_srv1 //(10)
@@ -24,10 +21,8 @@ DATA_SECTION
   init_int phase_selcoffs_srv1   //(16)
   init_vector wt_like(1,8)    //(17)
  //sample size for length comps for weighting likelihoods  
-  init_int nlen_r    //(18)    number of length bins
-//reduce nlen by one to cut off 1st length bin 
+  init_int nlen    //(18)    number of length bins
   init_int nobs_fish //(19)
-  //!!cout<<nobs_fish<<endl;
   init_ivector yrs_fish(1,nobs_fish) //(20)
   init_matrix nsamples_fish(1,2,1,nobs_fish) //(21)
   init_int nobs_srv1  //(22)
@@ -39,16 +34,16 @@ DATA_SECTION
   init_ivector yrs_srv1_age(1,nobs_srv1_age)  //(28)
   init_vector like_wght(1,5)    //(29)
   init_matrix nsamples_srv1_age(1,2,1,nobs_srv1_age) //(30)
-  init_3darray obs_p_srv1_len_r(1,2,1,nobs_srv1_length,1,nlen_r) //(31) 2x2x21
-  init_3darray obs_p_srv1_age_read(1,2,1,nobs_srv1_age,1,nages_read)  //(32)  2x11x21  
-  init_3darray obs_p_fish_r(1,2,1,nobs_fish,1,nlen_r)  //(33) 2x31x21
+  init_3darray obs_p_srv1_length(1,2,1,nobs_srv1_length,1,nlen) //(31) 2x2x21
+  init_3darray obs_p_srv1_age(1,2,1,nobs_srv1_age,1,nages)  //(32)  2x11x21  
+  init_3darray obs_p_fish(1,2,1,nobs_fish,1,nlen)  //(33) 2x31x21
   init_vector catch_bio(styr,endyr)  //(34)
   init_vector obs_srv1(1,nobs_srv1) //(35)
   init_vector obs_srv1_sd(1,nobs_srv1) //(36)
  //need wt vector by length for split sex?
   init_matrix wt(1,2,1,nages)   //(37)
   init_vector maturity(1,nages)   //(38)
-  init_3darray lenage(1,2,1,nages,1,nlen_r-1)   //(39) 
+  init_3darray lenage(1,2,1,nages,1,nlen)   //(39) 
   init_number offset_const           //(40)  a constant to offset zero values 
    int styr_rec; 
    vector cv_srv1(1,nobs_srv1);
@@ -60,11 +55,9 @@ DATA_SECTION
   int k
 //
   int ii
-  int m
-  int nlen  
+  int m 
  
  LOCAL_CALCS
-  nlen=nlen_r-1;
   styr_rec=styr-nages+1;
   if(nselages>nages) nselages=nages;
   if(nselages_srv1>nages) nselages_srv1=nages;
@@ -72,14 +65,16 @@ DATA_SECTION
   cv_srv1=elem_div(obs_srv1_sd,obs_srv1);
 //change weights to tons
   wt=wt*.001;
-
  END_CALCS
 
-  3darray obs_p_srv1_age(1,2,1,nobs_srv1_age,1,nages)
-  3darray obs_p_srv1_age_r(1,2,1,nobs_srv1_age,1,nages)
-  3darray obs_p_srv1_length(1,2,1,nobs_srv1_length,1,nlen) 
-  3darray obs_p_fish(1,2,1,nobs_fish,1,nlen)
-  vector obs_sexr(1,nobs_fish)
+//  3darray obs_p_srv1_age(1,2,1,nobs_srv1_age,1,nages)
+//  3darray obs_p_srv1_age_r(1,2,1,nobs_srv1_age,1,nages)
+//  3darray obs_p_srv1_length(1,2,1,nobs_srv1_length,1,nlen) 
+//  3darray obs_p_fish(1,2,1,nobs_fish,1,nlen)
+  4darray test(1,2,1,3,1,4,1,5)
+  !! cout <<"test"<<endl; 
+  !! cout <<test<<endl;  
+  vector obs_sexr(1,nobs_fish)   //proportion males in fishery length data
   vector obs_sexr_srv1(1,nobs_srv1_age)
   vector obs_sexr_srv1_l(1,nobs_srv1_length)
 
@@ -89,8 +84,9 @@ INITIALIZATION_SECTION
   log_avg_fmort -5.
   q1 1.
   fmort_dev 0.00001
-
-PARAMETER_SECTION
+ 
+PARAMETER_SECTION     
+  !! cout <<"line 89"<<endl;
  //parameters to be estimated are all ones that begin with init_ and have a positive
  //phase, negative phase means are fixed.
  //phase of 8 is greater than last phase so does q1 in last phase  
@@ -109,6 +105,7 @@ PARAMETER_SECTION
   init_bounded_number fish_sel50_f(1.,8.,phase_logistic_sel)
   init_bounded_number fish_slope_m(.05,2.0,phase_logistic_sel)
   init_bounded_number fish_sel50_m(1.,25.,phase_logistic_sel)
+
   init_bounded_number srv1_slope_f(.1,5.,phase_logistic_sel_srv1)
   init_bounded_number srv1_sel50_f(1.,10.,phase_logistic_sel_srv1)
   init_bounded_number srv1_slope_m(.01,5.,phase_logistic_sel_srv1)
@@ -116,6 +113,7 @@ PARAMETER_SECTION
 
   init_bounded_number sexr_param_fish(1.0,1.0,-5)  //this was hitting bound of 1.0 so fixed it - should free up to check
   init_bounded_number sexr_param_srv(.25,1.0,phase_selcoffs_srv1)
+  !! cout <<"line 114"<<endl;  
 // Parameters for computing SPR rates 
   init_bounded_number F40(0.05,.5,phase_F40)
   init_bounded_number F35(0.05,.5,phase_F40)
@@ -128,22 +126,28 @@ PARAMETER_SECTION
   vector avgsel_srv1(1,2)
   matrix popn(1,2,styr,endyr)
   matrix totn_srv1(1,2,styr,endyr)
-  vector M(1,2)
+  vector M(1,2)    
+  !! cout <<"line 128"<<endl; 
   vector explbiom(styr,endyr)
   vector pred_bio(styr,endyr)
   vector fspbio(styr,endyr)
-  vector pred_srv1(styr,endyr)
+  vector pred_srv1(styr,endyr)  
+  !! cout <<"line 133"<<endl;
   3darray pred_p_fish(1,2,styr,endyr,1,nlen)
   3darray pred_p_srv1_age(1,2,styr,endyr,1,nages)
   3darray pred_p_srv1_len(1,2,styr,endyr,1,nlen)
-  vector pred_catch(styr,endyr)
+  vector pred_catch(styr,endyr)  
+  !! cout <<"line 138"<<endl; 
   3darray natage(1,2,styr,endyr,1,nages)
-  3darray catage(1,2,styr,endyr,1,nages)
-  3darray natlength(1,2,styr,endyr,1,nlen)
+  3darray catage(1,2,styr,endyr,1,nages) 
+  !! cout <<"line 141"<<endl;   
+  3darray natlength(1,2,styr,endyr,1,nlen)    
+  !! cout <<"line 142"<<endl;  
   3darray Z(1,2,styr,endyr,1,nages)
   3darray F(1,2,styr,endyr,1,nages)
   3darray S(1,2,styr,endyr,1,nages)
-  vector fmort(styr,endyr)
+  vector fmort(styr,endyr) 
+  !! cout <<"line 144"<<endl; 
   number rbar
   vector surv(1,2)
   vector offset(1,3)
@@ -161,7 +165,8 @@ PARAMETER_SECTION
   objective_function_value f
   number tmp
   vector pred_sexr(styr,endyr)
-  vector preds_sexr(styr,endyr)
+  vector preds_sexr(styr,endyr)    
+  !! cout <<"line 161"<<endl; 
  // Stuff for SPR and yield projections
   number sigmar
   number ftmp
@@ -197,89 +202,58 @@ PARAMETER_SECTION
 
 PRELIMINARY_CALCS_SECTION
 
-//chop lower ages off and accumulate older ages 
- //sex loop
-    for(k=1; k<=2; k++)  
-    { 
-       for (i=1; i <= nobs_srv1_age; i++)
-       {
-            for(j=1; j < nages; j++)
-            {
-                //ages go from 3 to 15
-                obs_p_srv1_age_r(k,i,j)=obs_p_srv1_age_read(k,i,j+2);
-            }
-            for(m=nages; m<=nages_read; m++)
-            {
-                obs_p_srv1_age_r(k,i,nages)+=obs_p_srv1_age_read(k,i,m);
-            }
-        }
-    }
-
-//compute sex ratio in  catch
-
-      for(i=1; i<=nobs_fish;i++)
-        {
-         obs_sexr(i)=(sum(obs_p_fish_r(1,i)(2,nlen+1)))/(sum(obs_p_fish_r(1,i)(2,nlen+1))+sum(obs_p_fish_r(2,i)(2,nlen+1)));
-        }
+//compute sex ratio in  catch: proportion of males
+   for(i=1; i<=nobs_fish;i++)
+   {
+     obs_sexr(i) = sum(obs_p_fish(2,i))/sum(obs_p_fish(1,i) + obs_p_fish(2,i)); 
+   }
 //age obs sex ratio in survey
       for(i=1; i<=nobs_srv1_age;i++)
       {
-       obs_sexr_srv1(i)=(sum(obs_p_srv1_age_r(1,i)))/(sum(obs_p_srv1_age_r(1,i))+sum(obs_p_srv1_age_r(2,i)));
+       obs_sexr_srv1(i)=(sum(obs_p_srv1_age(2,i)))/(sum(obs_p_srv1_age(1,i))+sum(obs_p_srv1_age(2,i)));
       }
 //length obs sex ratio in survey
       for(i=1; i<=nobs_srv1_length;i++)
       {
-       obs_sexr_srv1_l(i)=(sum(obs_p_srv1_len_r(1,i)(2,nlen+1)))/(sum(obs_p_srv1_len_r(1,i)(2,nlen+1))+sum(obs_p_srv1_len_r(2,i)(2,nlen+1)));
+       obs_sexr_srv1_l(i)=(sum(obs_p_srv1_length(2,i)(2,nlen+1)))/(sum(obs_p_srv1_length(1,i))+sum(obs_p_srv1_length(2,i)));
       }
 
- offset=0.; 
-   for(k=1; k<=2; k++)
-    {
-       for (i=1; i <= nobs_fish; i++)
-       {
-//make observations proportions by year      
-//fishery offset
-           for (j=1; j<=nlen; j++)
-           {
-            obs_p_fish(k,i,j)=(obs_p_fish_r(k,i,j+1))/(sum(obs_p_fish_r(1,i)(2,nlen_r))+sum(obs_p_fish_r(2,i)(2,nlen_r)));
-             if (obs_p_fish(k,i,j)>0.0)
-              {
-               offset(1)-=nsamples_fish(k,i)*obs_p_fish(k,i,j)*log(obs_p_fish(k,i,j));
-              }
-           }
-       }
-    }
+//calculate offset for multinomial and length bin proportions
+//offset is a constant nplog(p) added to the likelihood 
+//magnitude depends on nsamples(sample size) and proportions observed.
+
+  offset.initialize();
+  for (i=1; i <= nobs_fish; i++)
+  {
+  double sumtot ;
+  sumtot = sum(obs_p_fish(1,i)+obs_p_fish(2,i));
+  obs_p_fish(1,i) = obs_p_fish(1,i) / sumtot; 
+  obs_p_fish(2,i) = obs_p_fish(2,i) / sumtot; 
+  for(k=1; k<=2;k++)
+    offset(1) -= nsamples_fish(k,i)*obs_p_fish(k,i) * log(obs_p_fish(k,i)+.0001);
+  }
+
  //survey length offset 
- for(k=1; k<=2;k++)
- {  
-     for (i=1; i <= nobs_srv1_length; i++)
-     {
-  
-          for (j=1; j<=nlen; j++)
-          {
-            obs_p_srv1_length(k,i,j)=obs_p_srv1_len_r(k,i,j+1)/sum(obs_p_srv1_len_r(1,i)(2,nlen_r)+obs_p_srv1_len_r(2,i)(2,nlen_r));
-             if (obs_p_srv1_length(k,i,j)>0.0)
-              {
-                 offset(2)-=nsamples_srv1_length(k,i)*obs_p_srv1_length(k,i,j)*log(obs_p_srv1_length(k,i,j));
-              }
-          }
-     }
+ for (i=1; i <= nobs_srv1_length; i++)
+ {
+   double sumtot ;
+   sumtot = sum(obs_p_srv1_length(1,i)+obs_p_srv1_length(2,i));
+   obs_p_srv1_length(1,i) = obs_p_srv1_length(1,i) / sumtot; 
+   obs_p_srv1_length(2,i) = obs_p_srv1_length(2,i) / sumtot; 
+   for(k=1; k<=2;k++)
+     offset(2) -= nsamples_srv1_length(k,i)*obs_p_srv1_length(k,i) * log(obs_p_srv1_length(k,i)+.0001);
  }
+
  //survey age offset 
-    for(k=1; k<=2;k++)
-    {  
-       for (i=1; i <= nobs_srv1_age; i++)
-       {
-         obs_p_srv1_age(k,i)=obs_p_srv1_age_r(k,i)/(sum(obs_p_srv1_age_r(1,i))+sum(obs_p_srv1_age_r(2,i)));
-         for (j=1; j<=nages; j++)
-         {
-            if (obs_p_srv1_age(k,i,j)>0.0)
-             {
-               offset(3)-=nsamples_srv1_age(k,i)*obs_p_srv1_age(k,i,j)*log(obs_p_srv1_age(k,i,j));
-             }
-         }
-       }
-    }
+ for (i=1; i <= nobs_srv1_age; i++)
+ {
+   double sumtot ;
+   sumtot = sum(obs_p_srv1_age(1,i)+obs_p_srv1_age(2,i));
+   obs_p_srv1_age(1,i) = obs_p_srv1_age(1,i) / sumtot; 
+   obs_p_srv1_age(2,i) = obs_p_srv1_age(2,i) / sumtot; 
+   for(k=1; k<=2;k++)
+     offset(3) -= nsamples_srv1_age(k,i)*obs_p_srv1_age(k,i) * log(obs_p_srv1_age(k,i)+.0001);
+ }
 
   M(1)=0.20;
   M(2)=0.35;
@@ -840,7 +814,7 @@ REPORT_SECTION
 //  report << F << endl;
   report << "Observed Survey 1:  '1961','1973','1984','1987','1990','1993','1996','1999','2001','2003','2005','2007','2009','2011','2013'" << endl;
   report << obs_srv1 << endl;
-  report << "Survey Q: 'Q'" << endl;
+  report << "Survey catchability Q: 'Q'" << endl;
   report << q1 << endl;
   report << "natural mortality females, males: 'FemM','MaleM'" << endl;
   report << M << endl;
@@ -1306,7 +1280,8 @@ RUNTIME_SECTION
   convergence_criteria 1e-7
 
 TOP_OF_MAIN_SECTION
-  arrmblsize = 2000000;
+  arrmblsize = 2000000; 
+  gradient_structure::set_MAX_NVAR_OFFSET(300);  
   gradient_structure::set_GRADSTACK_BUFFER_SIZE(3000000); // this may be incorrect in
   // the AUTODIF manual.
   gradient_structure::set_CMPDIF_BUFFER_SIZE(100000000);

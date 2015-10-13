@@ -1,8 +1,8 @@
-#if !defined(_atfgoa2013_)
-#  define _atfgoa2013_
+#if !defined(_atfgoa2011_)
+#  define _atfgoa2011_
 
 class model_data : public ad_comm{
-  ofstream *   pad_evalout;
+  ofstream *   pad_post;
   data_int styr;
   data_int endyr;
   data_int styr_fut;
@@ -171,6 +171,7 @@ private:
   param_number sprpen;
   param_matrix Nspr;
   param_3array nage_future;
+  param_matrix fspbiom_fut;
   param_3array F_future;
   param_3array Z_future;
   param_3array S_future;
@@ -178,7 +179,6 @@ private:
   param_number avg_rec_dev_future;
   param_vector avg_F_future;
   param_matrix catch_future;
-  param_stddev_matrix fspbiom_fut;
   param_stddev_matrix future_biomass;
   param_vector explbiom_fut;
   param_number maxsel_fish;
@@ -195,6 +195,7 @@ public:
   virtual void final_calcs(void);
   model_parameters(int sz,int argc, char * argv[]);
   virtual void initializationfunction(void);
+  void WriteMCMC(void);
   void get_growthmatrix(void);
   void get_selectivity(void);
   void get_mortality(void);
